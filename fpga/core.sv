@@ -27,10 +27,12 @@ module main
    
    display disp(.led);
    ram_bus jtag_ram_bus();
+   ram_bus core_ram_bus();
    core_control c0_ctrl();
    
    dp_ram #(.n_word(512)) code_ram
-     (.bus_a(jtag_ram_bus.slave));
+     (.bus_a(jtag_ram_bus.slave),
+      .bus_b(core_ram_bus.slave));
 
    jtag j
      (.disp,
@@ -38,6 +40,7 @@ module main
       .core_ctrl(c0_ctrl.master));
 
    core c0(.clock(clk50),
+           .code_ram(core_ram_bus.master),
            .disp,
            .ctrl(c0_ctrl.slave));
    
@@ -175,17 +178,26 @@ module core #(op_width = 16)
    always_comb begin
       code_ram.addr = ip;
       code_ram.we = 1'b0;
+      code_ram.clock = clock;
       disp.led[9:6] = sum;
    end
    
    always_ff @(posedge clock) begin
+      static logic [op_width-1:0] op = 'X;
       if (ctrl.running) begin
+         $display("core ON");
+         op = code_ram.read;
+         $display("- op : 0x%h", op);
          sum <= sum + code_ram.read;
+         
+         $display("- fetch 0x%h", ip);
          ip <= ip+1;
       end
       else begin // reset
+         $display("core OFF");
          ip <= '0;
-         sum <= 0;
+         sum <= '0;
       end
+      $display("==============");
    end
 endmodule
