@@ -271,6 +271,9 @@ println("chain length: ", chain_length(jtag))
 println("IDCODE: ", hex(idcode(jtag)))
 hub = vj_hub_info(jtag)
 node = hub.nodes[1]
+core_ctrl(node, false)
+host2dev(node, 0, UInt16[0x2a00, 0x2a00, 0x0002, 0x0002])
+core_ctrl(node, true)
 if false
 #=set_addr(node, bitarray(0, 9))
 read(STDIN, Char)
